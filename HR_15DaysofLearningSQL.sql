@@ -9,50 +9,50 @@ Assume that the end date of the contest was March 06, 2016.
 */
 
 -- 
-WITH t1 AS (
-	SELECT s.submission_date, s.hacker_id, h.name, COUNT(*) AS daily_subs
-	FROM public.submissions AS s
-	INNER JOIN public.hackers AS h
-	ON s.hacker_id = h.hacker_id
-	GROUP BY 1, 2, 3
-	ORDER BY 1, 2
-),
-mar1 AS (
+WITH mar1 AS (
 	SELECT submission_date, hacker_id
-	FROM t1
+	FROM public.submissions
 	WHERE submission_date = '2016-03-01'
 	GROUP BY 1, 2
 	ORDER BY 1
 ),
 mar2 AS (
-	SELECT t1.submission_date, t1.hacker_id
-	FROM t1
+	SELECT s.submission_date, s.hacker_id
+	FROM public.submissions AS s
 	INNER JOIN mar1
-	ON t1.hacker_id = mar1.hacker_id AND t1.submission_date = '2016-03-02'	
+	ON s.hacker_id = mar1.hacker_id AND s.submission_date = '2016-03-02'	
 ),
 mar3 AS (
-	SELECT t1.submission_date, t1.hacker_id
-	FROM t1
+	SELECT s.submission_date, s.hacker_id
+	FROM public.submissions AS s
 	INNER JOIN mar2
-	ON t1.hacker_id = mar2.hacker_id AND t1.submission_date = '2016-03-03'
+	ON s.hacker_id = mar2.hacker_id AND s.submission_date = '2016-03-03'
 ),
 mar4 AS (
-	SELECT t1.submission_date, t1.hacker_id
-	FROM t1
+	SELECT s.submission_date, s.hacker_id
+	FROM public.submissions AS s
 	INNER JOIN mar3
-	ON t1.hacker_id = mar3.hacker_id AND t1.submission_date = '2016-03-04'
+	ON s.hacker_id = mar3.hacker_id AND s.submission_date = '2016-03-04'
 ),
 mar5 AS (
-	SELECT t1.submission_date, t1.hacker_id
-	FROM t1
+	SELECT s.submission_date, s.hacker_id
+	FROM public.submissions AS s
 	INNER JOIN mar4
-	ON t1.hacker_id = mar4.hacker_id AND t1.submission_date = '2016-03-05'
+	ON s.hacker_id = mar4.hacker_id AND s.submission_date = '2016-03-05'
 ),
 mar6 AS (
-	SELECT t1.submission_date, t1.hacker_id
-	FROM t1
+	SELECT s.submission_date, s.hacker_id
+	FROM public.submissions AS s
 	INNER JOIN mar5
-	ON t1.hacker_id = mar5.hacker_id AND t1.submission_date = '2016-03-06'
+	ON s.hacker_id = mar5.hacker_id AND s.submission_date = '2016-03-06'
+),
+t1 AS (
+    SELECT s.submission_date, s.hacker_id, h.name, COUNT(*) AS daily_subs
+    FROM public.submissions AS s
+    INNER JOIN public.hackers AS h
+    ON s.hacker_id = h.hacker_id
+    GROUP BY 1, 2, 3
+    ORDER BY 1, 2
 ),
 t2 AS (
 	SELECT * 
