@@ -74,7 +74,7 @@ t3 AS (
 		NTILE(500) OVER (PARTITION BY submission_date ORDER BY daily_subs DESC, hacker_id) AS percentile
 	FROM t1
 )
-SELECT t3.submission_date, COUNT(*) AS daily_sub, t3.hacker_id, t3.name
+SELECT t3.submission_date, COUNT(*) AS hacker_count, t3.hacker_id, t3.name
 FROM t3
 INNER JOIN t2
 ON t3.submission_date = t2.submission_date
