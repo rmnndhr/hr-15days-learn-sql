@@ -5,11 +5,6 @@ hacker_id and name of the hacker who made maximum number of submissions
 each day. If more than one such hacker has a maximum number of submissions, 
 print the lowest hacker_id. The query should print this information for each day of 
 the contest, sorted by the date.
-*******************
-Assume that the end date of the contest was March 06, 2016.
-Will need to add more temp tables for remainder of 15 days in March, 
-or refactor code to easily calculate for more than 6 days.
-*******************
 */
 
 -- Build a temp table mar1 with unique hacker(s) who submitted that day
@@ -23,26 +18,27 @@ WITH mar1 AS (
 /*
 Build temp table with unique hacker(s),who has been submitting since day 1.
 Do so by joining submissions table with only hackers that submitted on day 1.
-Then, add a new column to show if the submittals skipped a day or more.
+Then, add a day column that shows the day of the month.
+And add a new rank column to rank the submittals, using the same rank for multiple submissions on a single day.
 */
 mar15 AS (
 	SELECT s2.submission_date, 
-		   s2.hacker_id, 
-		   s2.submission_date - LAG(s2.submission_date) OVER (PARTITION BY s2.hacker_id ORDER BY s2.hacker_id, s2.submission_date) AS lag_diff
+		   s2.hacker_id,
+		   DATE_PART('day',s2.submission_date) AS day_of_mar,  
+		   DENSE_RANK() OVER (PARTITION BY s2.hacker_id ORDER BY s2.hacker_id, s2.submission_date) AS row_num
 	FROM mar1 AS s1
-	INNER JOIN  public.submissions AS s2
-	ON     s1.hacker_id = s2.hacker_id
-	ORDER BY 2, 1
+	INNER JOIN public.submissions AS s2
+	ON s1.hacker_id = s2.hacker_id
 ),
 /*
-Select only the hackers that haven't skipped a day (lag_diff = 1 if submitted daily & = 0 if multiple submissions on same day).
-Select those with lag_diff IS NULL too since that includes submittals on Mar 1.
-This table only inlcudes unique hacker_id that submited daily since day 1 up to that day.
+Select only the hackers that haven't skipped a day (i.e. if rank < day of the month, means at least a day was skipped).
+The first rank will be 1, which is the 1st of Mar, since each selection has submission = Mar 1.
+This table only inlcudes unique hacker_id that submitted daily since day 1 up to that day.
 */
 t1 AS (
-	SELECT submission_date, hacker_id
+	SELECT DISTINCT submission_date, hacker_id
 	FROM mar15
-	WHERE lag_diff IS NULL OR lag_diff <= 1
+	WHERE day_of_mar = row_num
 	ORDER BY 1, 2
 ),
 /*
