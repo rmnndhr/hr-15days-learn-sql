@@ -21,59 +21,29 @@ WITH mar1 AS (
 	ORDER BY 1
 ),
 /*
-Continue building temp tables with unique hacker(s),who has been submitting daily since day 1.
-Do so by joining previous day's table with common hackers, who submitted both days. 
-Previous day's table only includes hacker(s), who has been submitting daily since day 1 
-up to that day.
+Build temp table with unique hacker(s),who has been submitting since day 1.
+Do so by joining submissions table with only hackers that submitted on day 1.
+Then, add a new column to show if the submittals skipped a day or more.
 */
-mar2 AS (
-	SELECT s.submission_date, s.hacker_id
-	FROM public.submissions AS s
-	INNER JOIN mar1
-	ON s.hacker_id = mar1.hacker_id AND s.submission_date = '2016-03-02'	
-),
-mar3 AS (
-	SELECT s.submission_date, s.hacker_id
-	FROM public.submissions AS s
-	INNER JOIN mar2
-	ON s.hacker_id = mar2.hacker_id AND s.submission_date = '2016-03-03'
-),
-mar4 AS (
-	SELECT s.submission_date, s.hacker_id
-	FROM public.submissions AS s
-	INNER JOIN mar3
-	ON s.hacker_id = mar3.hacker_id AND s.submission_date = '2016-03-04'
-),
-mar5 AS (
-	SELECT s.submission_date, s.hacker_id
-	FROM public.submissions AS s
-	INNER JOIN mar4
-	ON s.hacker_id = mar4.hacker_id AND s.submission_date = '2016-03-05'
-),
-mar6 AS (
-	SELECT s.submission_date, s.hacker_id
-	FROM public.submissions AS s
-	INNER JOIN mar5
-	ON s.hacker_id = mar5.hacker_id AND s.submission_date = '2016-03-06'
+mar15 AS (
+	SELECT s2.submission_date, 
+		   s2.hacker_id, 
+		   s2.submission_date - LAG(s2.submission_date) OVER (PARTITION BY s2.hacker_id ORDER BY s2.hacker_id, s2.submission_date) AS lag_diff
+	FROM mar1 AS s1
+	INNER JOIN  public.submissions AS s2
+	ON     s1.hacker_id = s2.hacker_id
+	ORDER BY 2, 1
 ),
 /*
-Merge each month's temp tables to get the unique hackers corresponding to each day.
+Select only the hackers that haven't skipped a day (lag_diff = 1 if submitted daily & = 0 if multiple submissions on same day).
+Select those with lag_diff IS NULL too since that includes submittals on Mar 1.
 This table only inlcudes unique hacker_id that submited daily since day 1 up to that day.
 */
 t1 AS (
-	SELECT * 
-	FROM mar1 
-	UNION SELECT * 
-	FROM mar2
-	UNION SELECT * 
-	FROM mar3
-	UNION SELECT * 
-	FROM mar4
-	UNION SELECT * 
-	FROM mar5
-	UNION SELECT * 
-	FROM mar6
-	ORDER BY 1
+	SELECT submission_date, hacker_id
+	FROM mar15
+	WHERE lag_diff IS NULL OR lag_diff <= 1
+	ORDER BY 1, 2
 ),
 /*
 Generate a temp table to get hacker name and a total count of daily submission
